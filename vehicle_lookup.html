@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Registration Lookup System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(to right, #2c3e50, #4a6491);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+        
+        .search-section {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .search-box {
+            display: flex;
+            gap: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        input {
+            flex: 1;
+            padding: 15px 20px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        button {
+            padding: 15px 30px;
+            background: linear-gradient(to right, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .result-section {
+            padding: 20px;
+        }
+        
+        .result-count {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 5px solid #2196f3;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th {
+            background: linear-gradient(to right, #2c3e50, #4a6491);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 1.2em;
+        }
+        
+        .vehicle-found {
+            animation: highlight 1s ease;
+        }
+        
+        @keyframes highlight {
+            0% { background-color: #fff3cd; }
+            100% { background-color: white; }
+        }
+        
+        @media (max-width: 768px) {
+            .search-box {
+                flex-direction: column;
+            }
+            
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚗 Vehicle Registration Lookup</h1>
+            <p class="subtitle">Search vehicle details by registration number</p>
+        </header>
+        
+        <section class="search-section">
+            <div class="search-box">
+                <input type="text" 
+                       id="searchInput" 
+                       placeholder="Enter registration number (e.g., AEK-176, AF5-581, ZT-906)"
+                       onkeypress="handleKeyPress(event)">
+                <button onclick="searchVehicle()">🔍 Search</button>
+            </div>
+        </section>
+        
+        <section class="result-section">
+            <div id="resultCount" class="result-count">
+                Enter a registration number to search
+            </div>
+            
+            <div id="resultsContainer">
+                <table id="resultTable">
+                    <thead>
+                        <tr>
+                            <th>Sr.</th>
+                            <th>Maker</th>
+                            <th>Model</th>
+                            <th>Chassis No.</th>
+                            <th>Registration No.</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultBody">
+                        <!-- Results will appear here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Vehicle data array
+        const vehicles = [
+            {sr: 1, maker: "TOYOTA", model: "FIELDER", chassis: "NZE121-0294018", reg: "AEK-176"},
+            {sr: 2, maker: "TOYOTA", model: "COROLLA", chassis: "NZE121-3047317", reg: "AEK-178"},
+            {sr: 3, maker: "TOYOTA", model: "FIELDER", chassis: "NZE121-0308870", reg: "AFV-549"},
+            {sr: 4, maker: "TOYOTA", model: "FIELDER", chassis: "NZE121-0242969", reg: "AFV-553"},
+            {sr: 5, maker: "TOYOTA", model: "FIELDER", chassis: "ZZE122-0095649", reg: "AFV-560"},
+            {sr: 6, maker: "TOYOTA", model: "AXIO", chassis: "NZE141-6067624", reg: "AFS-795"},
+            {sr: 7, maker: "SUZUKI", model: "ALTO", chassis: "HA255-795731", reg: "AJE-751"},
+            {sr: 8, maker: "TOYOTA", model: "VITZ", chassis: "KSP130-2049268", reg: "AJE-781"},
+            {sr: 9, maker: "TOYOTA", model: "FIELDER", chassis: "NZE121-0304088", reg: "AJE-802"},
+            {sr: 10, maker: "SUZUKI", model: "VXR", chassis: "HA125-659592", reg: "AJE-807"},
+            {sr: 11, maker: "TOYOTA", model: "FIELDER", chassis: "NZE121-0333864", reg: "AJF-170"},
+            {sr: 12, maker: "TOYOTA", model: "FIELDER", chassis: "NZE121-0341088", reg: "FF-554"},
+            {sr: 13, maker: "SUZUKI", model: "JIMN", chassis: "JB33W107111", reg: "FZ-423"},
+            {sr: 14, maker: "TOYOTA", model: "FIELDER", chassis: "NZE121-0133783", reg: "ACX-759"},
+            {sr: 15, maker: "TOYOTA", model: "FIELDER", chassis: "NZE121-0190269", reg: "ACX-762"},
+            {sr: 16, maker: "TOYOTA", model: "COROLLA", chassis: "NZE121-3280071", reg: "AEE-462"},
+            {sr: 17, maker: "TOYOTA", model: "FIELDER", chassis: "NZE121-0268772", reg: "AEE-492"},
+            {sr: 18, maker: "TOYOTA", model: "COROLLA", chassis: "NZE121-3016832", reg: "AEE-518"},
+            {sr: 19, maker: "TOYOTA", model: "COROLLA", chassis: "NZE121-3302342", reg: "AEC-034"},
+            {sr: 20, maker: "TOYOTA", model: "COROLLA", chassis: "NZE121-3212449", reg: "AFH-288"},
+            {sr: 21, maker: "TOYOTA", model: "COROLLA", chassis: "NZE121-3282709", reg: "AHU-075"},
+            {sr: 22, maker: "TOYOTA", model: "COROLLA", chassis: "NZE121-3300109", reg: "BS-393"},
+            {sr: 23, maker: "TOYOTA", model: "COROLLA", chassis: "CE90-0057567", reg: "ZU-146"},
+            {sr: 24, maker: "TOYOTA", model: "STATE CAR", chassis: "CE106-0019389", reg: "ZU-154"},
+            {sr: 25, maker: "TOYOTA", model: "STATE CAR", chassis: "CE96-0077974", reg: "ZU-142"},
+            {sr: 26, maker: "TOYOTA", model: "COROLLA", chassis: "NZE121-3391489", reg: "AFS-253"},
+            {sr: 27, maker: "TOYOTA", model: "VITZ", chassis: "SCP10-0457543", reg: "AAD-796"},
+            {sr: 28, maker: "TOYOTA", model: "FIELDER", chassis: "NZE121-0037611", reg: "AFF-270"},
+            {sr: 29, maker: "TOYOTA", model: "VITZ", chassis: "SCP13-0009939", reg: "AFF-515"},
+            {sr: 30, maker: "TOYOTA", model: "COROLLA ANIO", chassis: "NZE141-6070640", reg: "AJB-243"},
+            {sr: 31, maker: "TOYOTA", model: "COROLLA G", chassis: "NZE121-3003197", reg: "AHU-323"},
+            {sr: 32, maker: "TOYOTA", model: "COROLLA", chassis: "NZE121-3038798", reg: "BD-157"},
+            {sr: 33, maker: "TOYOTA", model: "COROLLA", chassis: "NZE121-3304554", reg: "FC-494"},
+            {sr: 34, maker: "TOYOTA", model: "COROLLA", chassis: "NZE121-3003206", reg: "EX-656"},
+            {sr: 35, maker: "TOYOTA", model: "LAND CRUISER", chassis: "RZJ90-0002388", reg: "AAA-359"},
+            {sr: 36, maker: "TOYOTA", model: "COROLLA FIELDER", chassis: "NZE121-3360136", reg: "ABB-952"},
+            {sr: 37, maker: "TOYOTA", model: "COROLLA G", chassis: "NZE121-0321050", reg: "AAZ-628"},
+            {sr: 38, maker: "TOYOTA", model: "COROLLA X", chassis: "NZE121-3197704", reg: "ABB-727"},
+            {sr: 39, maker: "TOYOTA", model: "VITZ", chassis: "KSP130-2047069", reg: "ACF-362"},
+            {sr: 40, maker: "TOYOTA", model: "VITZ", chassis: "KSP90-2023199", reg: "AES-294"},
+            {sr: 41, maker: "TOYOTA", model: "COROLLA FIELDER", chassis: "NZE121-0065136", reg: "AEX-349"},
+            {sr: 42, maker: "TOYOTA", model: "COROLLA", chassis: "NZE121-0175754", reg: "AGD-496"},
+            {sr: 43, maker: "TOYOTA", model: "COROLLA FIELDER", chassis: "NZE121-0307590", reg: "AFZ-312"},
+            {sr: 44, maker: "TOYOTA", model: "FIELDER", chassis: "NZE121-9120996", reg: "AGA-520"},
+            {sr: 45, maker: "TOYOTA", model: "COROLLA", chassis: "NZE121-3267162", reg: "BS-727"},
+            {sr: 46, maker: "TOYOTA", model: "COROLLA", chassis: "NZE121-3185473", reg: "DD-583"},
+            {sr: 47, maker: "TOYOTA", model: "COROLLA", chassis: "AE1000051357", reg: "DD-619"},
+            {sr: 48, maker: "TOYOTA", model: "STATE CAR", chassis: "CE106-6021477", reg: "EZ-195"},
+            {sr: 49, maker: "TOYOTA", model: "COROLLA", chassis: "NZE121-3359051", reg: "FX-150"},
+            {sr: 50, maker: "TOYOTA", model: "COROLLA", chassis: "NZE121-0112281", reg: "AAY-917"},
+            {sr: 51, maker: "SUZUKI", model: "ALTO", chassis: "HA245-127183", reg: "AAZ-896"},
+            {sr: 52, maker: "TOYOTA", model: "HILUX", chassis: "KZN185-0008022", reg: "AAZ-902"},
+            {sr: 53, maker: "TOYOTA", model: "FIELDER", chassis: "NZE121-0331612", reg: "AFS-332"},
+            {sr: 54, maker: "SUZUKI", model: "ALTO", chassis: "HA125-645660", reg: "AF5-578"},
+            {sr: 55, maker: "TOYOTA", model: "COROLLA", chassis: "NZE121-3270977", reg: "AF5-581"},
+            {sr: 74, maker: "TOYOTA", model: "COROLLA G", chassis: "NZE121-3060052", reg: "AG5-825"},
+            {sr: 75, maker: "TOYOTA", model: "AQUA HYBRID", chassis: "NHP10-2419979", reg: "AJH-350"},
+            {sr: 76, maker: "TOYOTA", model: "COROLLA", chassis: "AE100-0089492", reg: "CV-782"},
+            {sr: 77, maker: "TOYOTA", model: "COROLLA", chassis: "AE100-3059720", reg: "FJ-497"},
+            {sr: 78, maker: "DAIHATSU", model: "ESSE", chassis: "L235S-1020356", reg: "ZT-967"},
+            {sr: 79, maker: "TOYOTA", model: "TOYOTA", chassis: "CE106-0107864", reg: "ZT-895"},
+            {sr: 80, maker: "TOYOTA", model: "CRESSIDA", chassis: "RX80-0019752", reg: "ZT-906"},
+            {sr: 81, maker: "TOYOTA", model: "FIELDER", chassis: "NZE121-0024423", reg: "AGY-650"}
+        ];
+
+        function searchVehicle() {
+            const searchInput = document.getElementById('searchInput');
+            const query = searchInput.value.trim().toUpperCase();
+            const resultBody = document.getElementById('resultBody');
+            const resultCount = document.getElementById('resultCount');
+            
+            // Clear previous results
+            resultBody.innerHTML = '';
+            
+            if (!query) {
+                resultCount.innerHTML = '<span style="color: #dc3545;">⚠️ Please enter a registration number to search</span>';
+                return;
+            }
+            
+            // Search for vehicles (case-insensitive partial match)
+            const results = vehicles.filter(vehicle => 
+                vehicle.reg.includes(query)
+            );
+            
+            if (results.length > 0) {
+                resultCount.innerHTML = `🔍 Found <strong>${results.length}</strong> vehicle(s) matching "<strong>${query}</strong>"`;
+                
+                // Display results
+                results.forEach((vehicle, index) => {
+                    const row = document.createElement('tr');
+                    row.className = 'vehicle-found';
+                    row.style.animationDelay = `${index * 0.1}s`;
+                    
+                    row.innerHTML = `
+                        <td>${vehicle.sr}</td>
+                        <td>${vehicle.maker}</td>
+                        <td>${vehicle.model}</td>
+                        <td>${vehicle.chassis}</td>
+                        <td><strong>${vehicle.reg}</strong></td>
+                    `;
+                    
+                    resultBody.appendChild(row);
+                });
+            } else {
+                resultCount.innerHTML = `❌ No vehicles found matching "<strong>${query}</strong>"`;
+            }
+        }
+        
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                searchVehicle();
+            }
+        }
+        
+        // Display all vehicles on load
+        window.onload = function() {
+            const resultBody = document.getElementById('resultBody');
+            const resultCount = document.getElementById('resultCount');
+            
+            resultCount.innerHTML = `Total vehicles in database: <strong>${vehicles.length}</strong>`;
+            
+            // Show first 10 vehicles as example
+            vehicles.slice(0, 10).forEach(vehicle => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${vehicle.sr}</td>
+                    <td>${vehicle.maker}</td>
+                    <td>${vehicle.model}</td>
+                    <td>${vehicle.chassis}</td>
+                    <td>${vehicle.reg}</td>
+                `;
+                resultBody.appendChild(row);
+            });
+            
+            if (vehicles.length > 10) {
+                const moreRow = document.createElement('tr');
+                moreRow.innerHTML = `
+                    <td colspan="5" style="text-align: center; color: #666; font-style: italic;">
+                        ... and ${vehicles.length - 10} more vehicles. Enter a registration number to search.
+                    </td>
+                `;
+                resultBody.appendChild(moreRow);
+            }
+        };
+    </script>
+</body>
+</html>
